@@ -1,0 +1,5 @@
+[wokwi]
+version = 1
+firmware = 'prueba.ino.hex'
+elf = 'prueba.ino.elf'
+rfc2217ServerPort = 4000

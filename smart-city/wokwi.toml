@@ -1,0 +1,5 @@
+[wokwi]
+version = 1
+firmware = 'smart-city.ino.hex'
+elf = 'smart-city.ino.elf'
+rfc2217ServerPort = 4000
