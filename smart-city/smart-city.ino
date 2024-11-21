@@ -67,18 +67,19 @@ const float REACTION_VOLTAGE = 0.059;                                           
 const float CO2Curve[3] = {2.602, ZERO_POINT_VOLTAGE, (REACTION_VOLTAGE / (2.602 - 3))}; // Line curve with 2 points
 
 // Tiempos para cada estado (en milisegundos)
-const unsigned long DURACION_ROJO     = 4000;
-const unsigned long DURACION_NARANJA  = 3000;
-const unsigned long DURACION_VERDE    = 4000;
-const unsigned long DURACION_VERDE_T  = 2000;
-const unsigned long DURACION_AMARILLO = 3000;
+const unsigned long DURACION_ROJO       = 4000;
+const unsigned long DURACION_NARANJA    = 2000;
+const unsigned long DURACION_VERDE      = 4000;
+const unsigned long DURACION_VERDE_T    = 2400;
+const unsigned long DURACION_AMARILLO   = 2400;
+const unsigned long DURACION_TITILACION = 300;
 
 // Variable definitions
 int state, previous_state;
 float volts = 0; // Variable to store current voltage from CO2 sensor
 float co2 = 0;   // Variable to store CO2 value
 
-bool vP1 = false;
+bool vP1 = true;
 bool vP2 = false;
 bool vS1V3 = false;
 bool vS1V2 = false;
@@ -120,9 +121,10 @@ void mostrarEstadoLCD() {
     lcd.print((previousMillis + ((state == ROJO_ROJO || state == ROJO_VERDE) ? DURACION_ROJO : DURACION_AMARILLO)) - millis());
 }
 
+bool estaEnModalidadMadrugada = false;
+
 void readAllData()
 {
-
     vNIVEL_LUZ_AMBIENTE = analogRead(NIVEL_LUZ_AMBIENTE);
     vLDR2 = analogRead(LDR2);
     vCO2 = analogRead(CO2);
@@ -152,6 +154,7 @@ void readAllData()
         digitalWrite(S1LR, 0);
         digitalWrite(S1LA, 0);
         digitalWrite(S1LV, 0);
+        estaEnModalidadMadrugada = !estaEnModalidadMadrugada;
     }
     else
     {
@@ -211,7 +214,6 @@ void setup()
     previous_state = ROJO_AMARILLO;
 }
 
-
 void loop() {
     unsigned long currentMillis = millis();
 
@@ -222,7 +224,7 @@ void loop() {
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
             if (currentMillis - previousMillis >= DURACION_ROJO) {
                 previousMillis = currentMillis;
-                state = NARANJA_ROJO;
+                state = !estaEnModalidadMadrugada ? NARANJA_ROJO : AMARILLO_T_ROJO_T;
             }
             break;
             
@@ -245,8 +247,9 @@ void loop() {
             break;
 
         case VERDE_T_ROJO:
-            actualizarSemaforo(S1LR, S1LA, S1LV, false, true, true); // Luz verde y amarilla (por ahora)
-            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
+            actualizarSemaforo(S1LR, S1LA, S1LV, false, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2);
+            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false);
+
             if (currentMillis - previousMillis >= DURACION_VERDE_T) {
                 previousMillis = currentMillis;
                 state = AMARILLO_ROJO;
@@ -267,7 +270,7 @@ void loop() {
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
             if (currentMillis - previousMillis >= DURACION_ROJO) {
                 previousMillis = currentMillis;
-                state = ROJO_NARANJA;
+                state = !estaEnModalidadMadrugada ? ROJO_NARANJA : AMARILLO_T_ROJO_T;
             }
             break;
 
@@ -290,8 +293,10 @@ void loop() {
             break;
 
         case ROJO_VERDE_T:
+
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
-            actualizarSemaforo(S2LR, S2LA, S2LV, false, true, true); // Luz verde y amarilla (por ahora)
+            actualizarSemaforo(S2LR, S2LA, S2LV, false, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2); // Luz verde y amarilla (por ahora)
+
             if (currentMillis - previousMillis >= DURACION_VERDE_T) {
                 previousMillis = currentMillis;
                 state = ROJO_AMARILLO;
@@ -300,11 +305,17 @@ void loop() {
 
         case ROJO_AMARILLO:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
-            actualizarSemaforo(S2LR, S2LA, S2LV, false, true, true); // Luz verde y amarilla (por ahora)
+            actualizarSemaforo(S2LR, S2LA, S2LV, false, true, false); // Luz verde y amarilla (por ahora)
             if (currentMillis - previousMillis >= DURACION_AMARILLO) {
                 previousMillis = currentMillis;
                 state = ROJO_ROJO;
             }
+            break;
+
+        case AMARILLO_T_ROJO_T:
+            actualizarSemaforo(S1LR, S1LA, S1LV, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2, false); // Luz amarilla titilando
+            actualizarSemaforo(S2LR, S2LA, S2LV, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2, false, false); // Luz roja titilando
+            state = estaEnModalidadMadrugada ? AMARILLO_T_ROJO_T : ROJO_ROJO;
             break;
     }
 
