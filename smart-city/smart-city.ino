@@ -69,7 +69,8 @@ const float CO2Curve[3] = {2.602, ZERO_POINT_VOLTAGE, (REACTION_VOLTAGE / (2.602
 // Tiempos para cada estado (en milisegundos)
 const unsigned long DURACION_ROJO       = 4000;
 const unsigned long DURACION_NARANJA    = 2000;
-const unsigned long DURACION_VERDE      = 4000;
+const unsigned long DURACION_VERDE_1    = 4000;
+const unsigned long DURACION_VERDE_2    = 4000;
 const unsigned long DURACION_VERDE_T    = 2400;
 const unsigned long DURACION_AMARILLO   = 2400;
 const unsigned long DURACION_TITILACION = 300;
@@ -79,14 +80,15 @@ int state, previous_state;
 float volts = 0; // Variable to store current voltage from CO2 sensor
 float co2 = 0;   // Variable to store CO2 value
 
-bool vP1 = true;
-bool vP2 = false;
-bool vS1V3 = false;
-bool vS1V2 = false;
-bool vS1V1 = false;
-bool vS2V3 = false;
-bool vS2V2 = false;
-bool vS2V1 = false;
+bool vP1       = false;
+bool vP1Previo = false;
+bool vP2       = false;
+bool vS1V3     = false;
+bool vS1V2     = false;
+bool vS1V1     = false;
+bool vS2V3     = false;
+bool vS2V2     = false;
+bool vS2V1     = false;
 int vNIVEL_LUZ_AMBIENTE = 0;
 int vLDR2 = 0;
 int vCO2 = 0;
@@ -149,21 +151,13 @@ void readAllData()
     vS2V2 = digitalRead(S2V2);
     vS2V1 = digitalRead(S2V1);
 
-    if (vP1)
-    {
-        digitalWrite(S1LR, 0);
-        digitalWrite(S1LA, 0);
-        digitalWrite(S1LV, 0);
+    if (vP1 && !vP1Previo) {
         estaEnModalidadMadrugada = !estaEnModalidadMadrugada;
     }
-    else
-    {
-        digitalWrite(S1LR, vS1V1);
-        digitalWrite(S1LA, vS1V2);
-        digitalWrite(S1LV, vS1V3);
-    }
-    if (vP2)
-    {
+    vP1Previo = vP1;
+
+        
+    if (vP2) {
         digitalWrite(S2LR, 0);
         digitalWrite(S2LA, 0);
         digitalWrite(S2LV, 0);
@@ -181,22 +175,22 @@ void readAllData()
 void setup()
 {
     // Input pin config
-    pinMode(P1, INPUT);   // Traffic light 1 button as Input
-    pinMode(P2, INPUT);   // Traffic light 2 button as Input
-    pinMode(S1V3, INPUT); // Infrared sensor 1 in traffic light 1 as Input
-    pinMode(S1V2, INPUT); // Infrared sensor 2 in traffic light 1 as Input
-    pinMode(S1V1, INPUT); // Infrared sensor 3 in traffic light 1 as Input
-    pinMode(S2V3, INPUT); // Infrared sensor 4 in traffic light 2 as Input
-    pinMode(S2V2, INPUT); // Infrared sensor 5 in traffic light 2 as Input
-    pinMode(S2V1, INPUT); // Infrared sensor 6 in traffic light 2 as Input
+    pinMode(P1, INPUT);      // Traffic light 1 button as Input
+    pinMode(P2, INPUT);      // Traffic light 2 button as Input
+    pinMode(S1V3, INPUT);    // Infrared sensor 1 in traffic light 1 as Input
+    pinMode(S1V2, INPUT);    // Infrared sensor 2 in traffic light 1 as Input
+    pinMode(S1V1, INPUT);    // Infrared sensor 3 in traffic light 1 as Input
+    pinMode(S2V3, INPUT);    // Infrared sensor 4 in traffic light 2 as Input
+    pinMode(S2V2, INPUT);    // Infrared sensor 5 in traffic light 2 as Input
+    pinMode(S2V1, INPUT);    // Infrared sensor 6 in traffic light 2 as Input
 
     // Output pin config
-    pinMode(S1LR, OUTPUT); // Red traffic light 1 as Output
-    pinMode(S1LA, OUTPUT); // Yellow traffic light 1 as Output
-    pinMode(S1LV, OUTPUT); // Green traffic light 1 as Output
-    pinMode(S2LR, OUTPUT); // Red traffic light 2 as Output
-    pinMode(S2LA, OUTPUT); // Yellow traffic light 2 as Output
-    pinMode(S2LV, OUTPUT); // Green traffic light 2 as Output
+    pinMode(S1LR, OUTPUT);   // Red traffic light 1 as Output
+    pinMode(S1LA, OUTPUT);   // Yellow traffic light 1 as Output
+    pinMode(S1LV, OUTPUT);   // Green traffic light 1 as Output
+    pinMode(S2LR, OUTPUT);   // Red traffic light 2 as Output
+    pinMode(S2LA, OUTPUT);   // Yellow traffic light 2 as Output
+    pinMode(S2LV, OUTPUT);   // Green traffic light 2 as Output
 
     // Output cleaning
     digitalWrite(S1LR, LOW); // Turn Off Red traffic light 1
@@ -215,6 +209,8 @@ void setup()
 }
 
 void loop() {
+    readAllData();
+
     unsigned long currentMillis = millis();
 
     // Verificar el estado del semáforo y realizar acciones
@@ -226,6 +222,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = !estaEnModalidadMadrugada ? NARANJA_ROJO : AMARILLO_T_ROJO_T;
             }
+            // modificar duración de verde_1 basado en la cantidad de tráfico
+
             break;
             
         case NARANJA_ROJO:
@@ -240,10 +238,11 @@ void loop() {
         case VERDE_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, false, false, true); // Luz verde
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
-            if (currentMillis - previousMillis >= DURACION_VERDE) {
+            if (currentMillis - previousMillis >= DURACION_VERDE_1) {
                 previousMillis = currentMillis;
                 state = VERDE_T_ROJO;
             }
+            DURACION_VERDE_1 = 4000;
             break;
 
         case VERDE_T_ROJO:
@@ -272,6 +271,7 @@ void loop() {
                 previousMillis = currentMillis;
                 state = !estaEnModalidadMadrugada ? ROJO_NARANJA : AMARILLO_T_ROJO_T;
             }
+            // modificar duración de verde_2 basado en la cantidad de tráfico
             break;
 
         case ROJO_NARANJA:
@@ -286,10 +286,11 @@ void loop() {
         case ROJO_VERDE:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, false, false, true); // Luz verde
-            if (currentMillis - previousMillis >= DURACION_VERDE) {
+            if (currentMillis - previousMillis >= DURACION_VERDE_2) {
                 previousMillis = currentMillis;
                 state = ROJO_VERDE_T;
             }
+            DURACION_VERDE_2 = 4000;
             break;
 
         case ROJO_VERDE_T:
