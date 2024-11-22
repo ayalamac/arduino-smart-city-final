@@ -3,7 +3,9 @@
 #include <LiquidCrystal_I2C.h> //Library for LCD display via I2C
 #include <math.h>              //Mathematics library for pow function (CO2 computation)
 
-// I/O pin labeling
+// -----------------------------------------------------------------------------------------------------------------
+
+// * I/O pin labeling
 
 #define NIVEL_LUZ_AMBIENTE A0 // Potenciómetro que simula la intensidad de la luz en el ambiente para regular la iluminación de los dos semáforos
 #define LDR2 A1 // Pendiente cómo usarlo...
@@ -11,7 +13,7 @@
 
 #define P1 37   // Botón que alterna entre modalidad de ciclo normal de semáforos y modalidad madrugada
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// -----------------------------------------------------------------------------------------------------------------
 
 // Semáforo 1 - Principal
 #define S1LR 22  // Semáforo 1 - Luz Roja
@@ -30,15 +32,7 @@
 #define S2CSF 47
 #define S2CSG 48
 
-#define S2CSA 45
-#define S2CSB 44
-#define S2CSC 43
-#define S2CSD 42
-#define S2CSE 41
-#define S2CSF 40
-#define S2CSG 39
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+// -----------------------------------------------------------------------------------------------------------------
 
 // Semáforo 2 - Secundario
 #define S2LR 25  // Semáforo 2 - Luz Roja
@@ -51,7 +45,15 @@
 
 #define P2 36   // Botón para solicitar reducción de tiempo en verde, en el semáforo 2 para agilizar el paso peatonal
 
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+#define S2CSA 45
+#define S2CSB 44
+#define S2CSC 43
+#define S2CSD 42
+#define S2CSE 41
+#define S2CSF 40
+#define S2CSG 39
+
+// -----------------------------------------------------------------------------------------------------------------
 
 // Máquina de estados
 #define ROJO_ROJO 0
@@ -85,8 +87,7 @@ const float CO2Curve[3] = {2.602, ZERO_POINT_VOLTAGE, (REACTION_VOLTAGE / (2.602
 // Tiempos para cada estado (en milisegundos)
 const unsigned long DURACION_ROJO       = 1000;
 const unsigned long DURACION_NARANJA    = 2000;
-unsigned long DURACION_VERDE_1          = 2000;
-unsigned long DURACION_VERDE_2          = 2000;
+const unsigned long DURACION_VERDE      = 2000;
 const unsigned long DURACION_VERDE_T    = 2000;
 const unsigned long DURACION_AMARILLO   = 1000;
 const unsigned long DURACION_TITILACION = 250;
@@ -175,10 +176,6 @@ void readAllData()
 
 }
 
-// void calculateAdditionalTime() {
-//     int[]
-// }
-
 void mostrarNumeroContador(int numero) {
 
     // Matriz para los estados de los segmentos (HIGH = encendido, LOW = apagado)
@@ -219,20 +216,18 @@ void mostrarNumeroContador(int numero) {
 
 void setup()
 {
-    // Input pin config
-    pinMode(P1, INPUT);      // Traffic light 1 button as Input
-    pinMode(P2, INPUT);      // Traffic light 2 button as Input
-    pinMode(S1V3, INPUT);    // Infrared sensor 1 in traffic light 1 as Input
-    pinMode(S1V2, INPUT);    // Infrared sensor 2 in traffic light 1 as Input
-    pinMode(S1V1, INPUT);    // Infrared sensor 3 in traffic light 1 as Input
-    pinMode(S2V3, INPUT);    // Infrared sensor 4 in traffic light 2 as Input
-    pinMode(S2V2, INPUT);    // Infrared sensor 5 in traffic light 2 as Input
-    pinMode(S2V1, INPUT);    // Infrared sensor 6 in traffic light 2 as Input
+    pinMode(P1, INPUT);      
+    pinMode(P2, INPUT);      
+    pinMode(S1V3, INPUT);    
+    pinMode(S1V2, INPUT);    
+    pinMode(S1V1, INPUT);    
+    pinMode(S2V3, INPUT);    
+    pinMode(S2V2, INPUT);    
+    pinMode(S2V1, INPUT);    
 
-    // Output pin config
-    pinMode(S1LR, OUTPUT);  // Red traffic light 1 as Output
-    pinMode(S1LA, OUTPUT);  // Yellow traffic light 1 as Output
-    pinMode(S1LV, OUTPUT);  // Green traffic light 1 as Output
+    pinMode(S1LR, OUTPUT);  
+    pinMode(S1LA, OUTPUT);  
+    pinMode(S1LV, OUTPUT);
     pinMode(S2CSA, OUTPUT);
     pinMode(S2CSB, OUTPUT);
     pinMode(S2CSC, OUTPUT);
@@ -241,9 +236,9 @@ void setup()
     pinMode(S2CSF, OUTPUT);
     pinMode(S2CSG, OUTPUT);
     
-    pinMode(S2LR, OUTPUT);   // Red traffic light 2 as Output
-    pinMode(S2LA, OUTPUT);   // Yellow traffic light 2 as Output
-    pinMode(S2LV, OUTPUT);   // Green traffic light 2 as Output
+    pinMode(S2LR, OUTPUT); 
+    pinMode(S2LA, OUTPUT); 
+    pinMode(S2LV, OUTPUT); 
     pinMode(S2CSA, OUTPUT);
     pinMode(S2CSB, OUTPUT);
     pinMode(S2CSC, OUTPUT);
@@ -253,9 +248,9 @@ void setup()
     pinMode(S2CSG, OUTPUT);
 
     // Output cleaning
-    digitalWrite(S1LR, LOW);  // Turn Off Red traffic light 1
-    digitalWrite(S1LA, LOW);  // Turn Off Yellow traffic light 1
-    digitalWrite(S1LV, LOW);  // Turn Off Green traffic light 1
+    digitalWrite(S1LR, LOW);
+    digitalWrite(S1LA, LOW);
+    digitalWrite(S1LV, LOW);
     digitalWrite(S2CSA, HIGH);
     digitalWrite(S2CSB, HIGH);
     digitalWrite(S2CSC, HIGH);
@@ -264,9 +259,9 @@ void setup()
     digitalWrite(S2CSF, HIGH);
     digitalWrite(S2CSG, HIGH);
 
-    digitalWrite(S2LR, LOW); // Turn Off Red traffic light 2
-    digitalWrite(S2LA, LOW); // Turn Off Yellow traffic light 2
-    digitalWrite(S2LV, LOW); // Turn Off Green traffic light 2
+    digitalWrite(S2LR, LOW);
+    digitalWrite(S2LA, LOW);
+    digitalWrite(S2LV, LOW);
     digitalWrite(S2CSA, HIGH);
     digitalWrite(S2CSB, HIGH);
     digitalWrite(S2CSC, HIGH);
@@ -275,7 +270,10 @@ void setup()
     digitalWrite(S2CSF, HIGH);
     digitalWrite(S2CSG, HIGH);
 
-    // Communications
+    trafficLevelManager1 = new TrafficLevelManager();
+    trafficLevelManager2 = new TrafficLevelManager();
+
+    // * Communications
     Serial.begin(9600); // Start Serial communications with computer via Serial0 (TX0 RX0) at 9600 bauds
     lcd.init();
     lcd.backlight(); // Turn on LCD backlight
@@ -300,8 +298,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = !estaEnModalidadMadrugada ? NARANJA_ROJO : AMARILLO_T_ROJO_T;
             }
-            // modificar duración de verde_1 basado en la cantidad de tráfico
-
+            trafficLevelManager1->calculateAdditionalTime(0);
+            trafficLevelManager2->calculateAdditionalTime(0);
             break;
             
         case NARANJA_ROJO:
@@ -313,18 +311,21 @@ void loop() {
                 previousMillis = currentMillis;
                 state = VERDE_ROJO;
             }
+            trafficLevelManager1->calculateAdditionalTime(0);
+            trafficLevelManager2->calculateAdditionalTime(0);
             break;
 
         case VERDE_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, false, false, true); // Luz verde
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
-            mostrarNumeroContador(((DURACION_VERDE_1 + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            mostrarNumeroContador(((trafficLevelManager->getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
             
-            if (currentMillis - previousMillis >= DURACION_VERDE_1) {
+            if (currentMillis - previousMillis >= trafficLevelManager1->getAdditionalTime() + DURACION_VERDE) {
                 previousMillis = currentMillis;
                 state = VERDE_T_ROJO;
+                trafficLevelManager1->reset();
             }
-            DURACION_VERDE_1 = 4000;
+            trafficLevelManager2->calculateAdditionalTime(0);
             break;
 
         case VERDE_T_ROJO:
@@ -336,6 +337,7 @@ void loop() {
                 previousMillis = currentMillis;
                 state = AMARILLO_ROJO;
             }
+            trafficLevelManager2->calculateAdditionalTime(0);
             break;
 
         case AMARILLO_ROJO:
@@ -348,6 +350,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_ROJO_V2;
             }
+            trafficLevelManager1->calculateAdditionalTime(0);
+            trafficLevelManager2->calculateAdditionalTime(0);
             break;
 
         case ROJO_ROJO_V2:
@@ -359,7 +363,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = !estaEnModalidadMadrugada ? ROJO_NARANJA : AMARILLO_T_ROJO_T;
             }
-            // modificar duración de verde_2 basado en la cantidad de tráfico
+            trafficLevelManager1->calculateAdditionalTime(0);
+            trafficLevelManager2->calculateAdditionalTime(0);
             break;
 
         case ROJO_NARANJA:
@@ -371,6 +376,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_VERDE;
             }
+            trafficLevelManager1->calculateAdditionalTime(0);
+            trafficLevelManager2->calculateAdditionalTime(0);
             break;
 
         case ROJO_VERDE:
@@ -378,11 +385,12 @@ void loop() {
             actualizarSemaforo(S2LR, S2LA, S2LV, false, false, true); // Luz verde
             mostrarNumeroContador(-1);
             
-            if (currentMillis - previousMillis >= DURACION_VERDE_2) {
+            if (currentMillis - previousMillis >= trafficLevelManager2->getAdditionalTime() + DURACION_VERDE) {
                 previousMillis = currentMillis;
                 state = ROJO_VERDE_T;
+                trafficLevelManager2->reset();
             }
-            DURACION_VERDE_2 = 4000;
+            trafficLevelManager1->calculateAdditionalTime(0);
             break;
 
         case ROJO_VERDE_T:
@@ -396,6 +404,7 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_AMARILLO;
             }
+            trafficLevelManager1->calculateAdditionalTime(0);
             break;
 
         case ROJO_AMARILLO:
@@ -407,6 +416,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_ROJO;
             }
+            trafficLevelManager1->calculateAdditionalTime(0);
+            trafficLevelManager2->calculateAdditionalTime(0);
             break;
 
         case AMARILLO_T_ROJO_T:
@@ -419,4 +430,5 @@ void loop() {
     // Actualizar la pantalla LCD con el estado actual
     mostrarEstadoLCD();
 }
+
 
