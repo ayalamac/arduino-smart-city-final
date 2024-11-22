@@ -18,7 +18,7 @@ TrafficLevelManager::TrafficLevelManager(const int (&pinNumbers)[3]) {
 // Method to calculate additional time
 void TrafficLevelManager::calculateAdditionalTime() {
   for (int i = 2; i >= 0; i--) {
-    if (this->trafficLevels[i]) {
+    if (!this->trafficLevels[i]) {
       this->additionalTime =
           this->additionalTimes[i] * 1000; // Set additionalTime based on levels
       break; // Exit loop after finding the first active level

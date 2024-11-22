@@ -182,7 +182,7 @@ void mostrarNumeroContador(int numero) {
     };
 
     if (numero >= 0 && numero <= 9) {
-        Serial.println(numero);
+        // Serial.println(numero);
         // Activa los segmentos para el número correspondiente
         digitalWrite(S2CSA, segmentos[numero][0]);
         digitalWrite(S2CSB, segmentos[numero][1]);
@@ -192,7 +192,7 @@ void mostrarNumeroContador(int numero) {
         digitalWrite(S2CSF, segmentos[numero][5]);
         digitalWrite(S2CSG, segmentos[numero][6]);
     } else {
-        Serial.println(numero);
+        // Serial.println(numero);
         digitalWrite(S2CSA, HIGH);
         digitalWrite(S2CSB, HIGH);
         digitalWrite(S2CSC, HIGH);
@@ -272,8 +272,8 @@ void setup()
 
 void loop() {
     readAllData();
-    trafficLevelManager1->updateTrafficLevels();
-    trafficLevelManager2->updateTrafficLevels();
+    trafficLevelManager1.updateTrafficLevels();
+    trafficLevelManager2.updateTrafficLevels();
 
     unsigned long currentMillis = millis();
 
@@ -288,8 +288,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = !estaEnModalidadMadrugada ? NARANJA_ROJO : AMARILLO_T_ROJO_T;
             }
-            trafficLevelManager1->calculateAdditionalTime();
-            trafficLevelManager2->calculateAdditionalTime();
+            trafficLevelManager1.calculateAdditionalTime();
+            trafficLevelManager2.calculateAdditionalTime();
             break;
 
         case NARANJA_ROJO:
@@ -301,21 +301,21 @@ void loop() {
                 previousMillis = currentMillis;
                 state = VERDE_ROJO;
             }
-            trafficLevelManager1->calculateAdditionalTime();
-            trafficLevelManager2->calculateAdditionalTime();
+            trafficLevelManager1.calculateAdditionalTime();
+            trafficLevelManager2.calculateAdditionalTime();
             break;
 
         case VERDE_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, false, false, true); // Luz verde
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
-            mostrarNumeroContador(((trafficLevelManager2->getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            mostrarNumeroContador(((trafficLevelManager2.getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
 
-            if (currentMillis - previousMillis >= trafficLevelManager1->getAdditionalTime() + DURACION_VERDE) {
+            if (currentMillis - previousMillis >= trafficLevelManager1.getAdditionalTime() + DURACION_VERDE) {
                 previousMillis = currentMillis;
                 state = VERDE_T_ROJO;
-                trafficLevelManager1->reset();
+                trafficLevelManager1.reset();
             }
-            trafficLevelManager2->calculateAdditionalTime();
+            trafficLevelManager2.calculateAdditionalTime();
             break;
 
         case VERDE_T_ROJO:
@@ -327,7 +327,7 @@ void loop() {
                 previousMillis = currentMillis;
                 state = AMARILLO_ROJO;
             }
-            trafficLevelManager2->calculateAdditionalTime();
+            trafficLevelManager2.calculateAdditionalTime();
             break;
 
         case AMARILLO_ROJO:
@@ -340,8 +340,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_ROJO_V2;
             }
-            trafficLevelManager1->calculateAdditionalTime();
-            trafficLevelManager2->calculateAdditionalTime();
+            trafficLevelManager1.calculateAdditionalTime();
+            trafficLevelManager2.calculateAdditionalTime();
             break;
 
         case ROJO_ROJO_V2:
@@ -353,8 +353,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = !estaEnModalidadMadrugada ? ROJO_NARANJA : AMARILLO_T_ROJO_T;
             }
-            trafficLevelManager1->calculateAdditionalTime();
-            trafficLevelManager2->calculateAdditionalTime();
+            trafficLevelManager1.calculateAdditionalTime();
+            trafficLevelManager2.calculateAdditionalTime();
             break;
 
         case ROJO_NARANJA:
@@ -366,8 +366,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_VERDE;
             }
-            trafficLevelManager1->calculateAdditionalTime();
-            trafficLevelManager2->calculateAdditionalTime();
+            trafficLevelManager1.calculateAdditionalTime();
+            trafficLevelManager2.calculateAdditionalTime();
             break;
 
         case ROJO_VERDE:
@@ -375,12 +375,12 @@ void loop() {
             actualizarSemaforo(S2LR, S2LA, S2LV, false, false, true); // Luz verde
             mostrarNumeroContador(-1);
 
-            if (currentMillis - previousMillis >= trafficLevelManager2->getAdditionalTime() + DURACION_VERDE) {
+            if (currentMillis - previousMillis >= trafficLevelManager2.getAdditionalTime() + DURACION_VERDE) {
                 previousMillis = currentMillis;
                 state = ROJO_VERDE_T;
-                trafficLevelManager2->reset();
+                trafficLevelManager2.reset();
             }
-            trafficLevelManager1->calculateAdditionalTime();
+            trafficLevelManager1.calculateAdditionalTime();
             break;
 
         case ROJO_VERDE_T:
@@ -394,7 +394,7 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_AMARILLO;
             }
-            trafficLevelManager1->calculateAdditionalTime();
+            trafficLevelManager1.calculateAdditionalTime();
             break;
 
         case ROJO_AMARILLO:
@@ -406,8 +406,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_ROJO;
             }
-            trafficLevelManager1->calculateAdditionalTime();
-            trafficLevelManager2->calculateAdditionalTime();
+            trafficLevelManager1.calculateAdditionalTime();
+            trafficLevelManager2.calculateAdditionalTime();
             break;
 
         case AMARILLO_T_ROJO_T:
