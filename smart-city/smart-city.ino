@@ -22,6 +22,22 @@
 #define S1V2 34 // Semáforo 1 - Sensor IR para medir volumen de tráfico medio
 #define S1V3 35 // Semáforo 1 - Sensor IR para medir volumen de tráfico alto
 
+#define S2CSA 53
+#define S2CSB 52
+#define S2CSC 51
+#define S2CSD 50
+#define S2CSE 49
+#define S2CSF 47
+#define S2CSG 48
+
+#define S2CSA 45
+#define S2CSB 44
+#define S2CSC 43
+#define S2CSD 42
+#define S2CSE 41
+#define S2CSF 40
+#define S2CSG 39
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 // Semáforo 2 - Secundario
@@ -67,13 +83,13 @@ const float REACTION_VOLTAGE = 0.059;                                           
 const float CO2Curve[3] = {2.602, ZERO_POINT_VOLTAGE, (REACTION_VOLTAGE / (2.602 - 3))}; // Line curve with 2 points
 
 // Tiempos para cada estado (en milisegundos)
-const unsigned long DURACION_ROJO       = 4000;
+const unsigned long DURACION_ROJO       = 1000;
 const unsigned long DURACION_NARANJA    = 2000;
-const unsigned long DURACION_VERDE_1    = 4000;
-const unsigned long DURACION_VERDE_2    = 4000;
-const unsigned long DURACION_VERDE_T    = 2400;
-const unsigned long DURACION_AMARILLO   = 2400;
-const unsigned long DURACION_TITILACION = 300;
+unsigned long DURACION_VERDE_1          = 2000;
+unsigned long DURACION_VERDE_2          = 2000;
+const unsigned long DURACION_VERDE_T    = 2000;
+const unsigned long DURACION_AMARILLO   = 1000;
+const unsigned long DURACION_TITILACION = 250;
 
 // Variable definitions
 int state, previous_state;
@@ -142,11 +158,12 @@ void readAllData()
         dCO2 = pow(10, ((volts / DC_GAIN) - CO2Curve[1]) / CO2Curve[2] + CO2Curve[0]);
     }
 
-    vP1 = digitalRead(P1);
-    vP2 = digitalRead(P2);
+    vP1 = digitalRead(P1); // Toggle Modo Madrugada
+    vP2 = digitalRead(P2); // Solicitud de peatón
     vS1V3 = digitalRead(S1V3);
     vS1V2 = digitalRead(S1V2);
     vS1V1 = digitalRead(S1V1);
+
     vS2V3 = digitalRead(S2V3);
     vS2V2 = digitalRead(S2V2);
     vS2V1 = digitalRead(S2V1);
@@ -156,21 +173,49 @@ void readAllData()
     }
     vP1Previo = vP1;
 
-        
-    if (vP2) {
-        digitalWrite(S2LR, 0);
-        digitalWrite(S2LA, 0);
-        digitalWrite(S2LV, 0);
-    }
-    else
-    {
-        digitalWrite(S2LR, vS2V1);
-        digitalWrite(S2LA, vS2V2);
-        digitalWrite(S2LV, vS2V3);
-    }
 }
 
+// void calculateAdditionalTime() {
+//     int[]
+// }
 
+void mostrarNumeroContador(int numero) {
+
+    // Matriz para los estados de los segmentos (HIGH = encendido, LOW = apagado)
+    const int segmentos[10][7] = {
+        {LOW, LOW, LOW, LOW, LOW, LOW, HIGH},  // 0
+        {HIGH, LOW, LOW, HIGH, HIGH, HIGH, HIGH},     // 1
+        {LOW, LOW, HIGH, LOW, LOW, HIGH, LOW},  // 2
+        {LOW, LOW, LOW, LOW, HIGH, HIGH, LOW},  // 3
+        {HIGH, LOW, LOW, HIGH, HIGH, LOW, LOW},   // 4
+        {LOW, HIGH, LOW, LOW, HIGH, LOW, LOW},  // 5
+        {LOW, HIGH, LOW, LOW, LOW, LOW, LOW}, // 6
+        {LOW, LOW, LOW, HIGH, HIGH, HIGH, HIGH},    // 7
+        {LOW, LOW, LOW, LOW, LOW, LOW, LOW},// 8
+        {LOW, LOW, LOW, LOW, HIGH, LOW, LOW}  // 9
+    };
+
+    if (numero >= 0 && numero <= 9) {
+        Serial.println(numero);
+        // Activa los segmentos para el número correspondiente
+        digitalWrite(S2CSA, segmentos[numero][0]);
+        digitalWrite(S2CSB, segmentos[numero][1]);
+        digitalWrite(S2CSC, segmentos[numero][2]);
+        digitalWrite(S2CSD, segmentos[numero][3]);
+        digitalWrite(S2CSE, segmentos[numero][4]);
+        digitalWrite(S2CSF, segmentos[numero][5]);
+        digitalWrite(S2CSG, segmentos[numero][6]);
+    } else {
+        Serial.println(numero);
+        digitalWrite(S2CSA, HIGH);
+        digitalWrite(S2CSB, HIGH);
+        digitalWrite(S2CSC, HIGH);
+        digitalWrite(S2CSD, HIGH);
+        digitalWrite(S2CSE, HIGH);
+        digitalWrite(S2CSF, HIGH);
+        digitalWrite(S2CSG, LOW);
+    }
+}
 
 void setup()
 {
@@ -185,20 +230,50 @@ void setup()
     pinMode(S2V1, INPUT);    // Infrared sensor 6 in traffic light 2 as Input
 
     // Output pin config
-    pinMode(S1LR, OUTPUT);   // Red traffic light 1 as Output
-    pinMode(S1LA, OUTPUT);   // Yellow traffic light 1 as Output
-    pinMode(S1LV, OUTPUT);   // Green traffic light 1 as Output
+    pinMode(S1LR, OUTPUT);  // Red traffic light 1 as Output
+    pinMode(S1LA, OUTPUT);  // Yellow traffic light 1 as Output
+    pinMode(S1LV, OUTPUT);  // Green traffic light 1 as Output
+    pinMode(S2CSA, OUTPUT);
+    pinMode(S2CSB, OUTPUT);
+    pinMode(S2CSC, OUTPUT);
+    pinMode(S2CSD, OUTPUT);
+    pinMode(S2CSE, OUTPUT);
+    pinMode(S2CSF, OUTPUT);
+    pinMode(S2CSG, OUTPUT);
+    
     pinMode(S2LR, OUTPUT);   // Red traffic light 2 as Output
     pinMode(S2LA, OUTPUT);   // Yellow traffic light 2 as Output
     pinMode(S2LV, OUTPUT);   // Green traffic light 2 as Output
+    pinMode(S2CSA, OUTPUT);
+    pinMode(S2CSB, OUTPUT);
+    pinMode(S2CSC, OUTPUT);
+    pinMode(S2CSD, OUTPUT);
+    pinMode(S2CSE, OUTPUT);
+    pinMode(S2CSF, OUTPUT);
+    pinMode(S2CSG, OUTPUT);
 
     // Output cleaning
-    digitalWrite(S1LR, LOW); // Turn Off Red traffic light 1
-    digitalWrite(S1LA, LOW); // Turn Off Yellow traffic light 1
-    digitalWrite(S1LV, LOW); // Turn Off Green traffic light 1
+    digitalWrite(S1LR, LOW);  // Turn Off Red traffic light 1
+    digitalWrite(S1LA, LOW);  // Turn Off Yellow traffic light 1
+    digitalWrite(S1LV, LOW);  // Turn Off Green traffic light 1
+    digitalWrite(S2CSA, HIGH);
+    digitalWrite(S2CSB, HIGH);
+    digitalWrite(S2CSC, HIGH);
+    digitalWrite(S2CSD, HIGH);
+    digitalWrite(S2CSE, HIGH);
+    digitalWrite(S2CSF, HIGH);
+    digitalWrite(S2CSG, HIGH);
+
     digitalWrite(S2LR, LOW); // Turn Off Red traffic light 2
     digitalWrite(S2LA, LOW); // Turn Off Yellow traffic light 2
     digitalWrite(S2LV, LOW); // Turn Off Green traffic light 2
+    digitalWrite(S2CSA, HIGH);
+    digitalWrite(S2CSB, HIGH);
+    digitalWrite(S2CSC, HIGH);
+    digitalWrite(S2CSD, HIGH);
+    digitalWrite(S2CSE, HIGH);
+    digitalWrite(S2CSF, HIGH);
+    digitalWrite(S2CSG, HIGH);
 
     // Communications
     Serial.begin(9600); // Start Serial communications with computer via Serial0 (TX0 RX0) at 9600 bauds
@@ -207,6 +282,7 @@ void setup()
     state = ROJO_ROJO;
     previous_state = ROJO_AMARILLO;
 }
+
 
 void loop() {
     readAllData();
@@ -218,6 +294,8 @@ void loop() {
         case ROJO_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
+            mostrarNumeroContador(-1);
+
             if (currentMillis - previousMillis >= DURACION_ROJO) {
                 previousMillis = currentMillis;
                 state = !estaEnModalidadMadrugada ? NARANJA_ROJO : AMARILLO_T_ROJO_T;
@@ -229,6 +307,8 @@ void loop() {
         case NARANJA_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, true, false); // Luz roja y amarilla
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
+            mostrarNumeroContador(-1);
+
             if (currentMillis - previousMillis >= DURACION_NARANJA) {
                 previousMillis = currentMillis;
                 state = VERDE_ROJO;
@@ -238,6 +318,8 @@ void loop() {
         case VERDE_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, false, false, true); // Luz verde
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
+            mostrarNumeroContador(((DURACION_VERDE_1 + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            
             if (currentMillis - previousMillis >= DURACION_VERDE_1) {
                 previousMillis = currentMillis;
                 state = VERDE_T_ROJO;
@@ -248,7 +330,8 @@ void loop() {
         case VERDE_T_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, false, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2);
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false);
-
+            mostrarNumeroContador(((DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            
             if (currentMillis - previousMillis >= DURACION_VERDE_T) {
                 previousMillis = currentMillis;
                 state = AMARILLO_ROJO;
@@ -258,7 +341,10 @@ void loop() {
         case AMARILLO_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, false, true, false); // Luz amarilla
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
+            mostrarNumeroContador((DURACION_AMARILLO + 1000 - (currentMillis - previousMillis)) / 1000);
+            
             if (currentMillis - previousMillis >= DURACION_AMARILLO) {
+                mostrarNumeroContador(-1);
                 previousMillis = currentMillis;
                 state = ROJO_ROJO_V2;
             }
@@ -267,6 +353,8 @@ void loop() {
         case ROJO_ROJO_V2:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
+            mostrarNumeroContador(-1);
+            
             if (currentMillis - previousMillis >= DURACION_ROJO) {
                 previousMillis = currentMillis;
                 state = !estaEnModalidadMadrugada ? ROJO_NARANJA : AMARILLO_T_ROJO_T;
@@ -277,6 +365,8 @@ void loop() {
         case ROJO_NARANJA:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, true, true, false); // Luz roja y amarilla
+            mostrarNumeroContador(-1);
+            
             if (currentMillis - previousMillis >= DURACION_NARANJA) {
                 previousMillis = currentMillis;
                 state = ROJO_VERDE;
@@ -286,6 +376,8 @@ void loop() {
         case ROJO_VERDE:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, false, false, true); // Luz verde
+            mostrarNumeroContador(-1);
+            
             if (currentMillis - previousMillis >= DURACION_VERDE_2) {
                 previousMillis = currentMillis;
                 state = ROJO_VERDE_T;
@@ -298,6 +390,8 @@ void loop() {
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, false, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2); // Luz verde y amarilla (por ahora)
 
+            mostrarNumeroContador(-1);
+            
             if (currentMillis - previousMillis >= DURACION_VERDE_T) {
                 previousMillis = currentMillis;
                 state = ROJO_AMARILLO;
@@ -307,6 +401,8 @@ void loop() {
         case ROJO_AMARILLO:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, false, true, false); // Luz verde y amarilla (por ahora)
+            mostrarNumeroContador(-1);
+            
             if (currentMillis - previousMillis >= DURACION_AMARILLO) {
                 previousMillis = currentMillis;
                 state = ROJO_ROJO;
