@@ -2,6 +2,7 @@
 #include <Wire.h>              //Library required for I2C comms (LCD)
 #include <LiquidCrystal_I2C.h> //Library for LCD display via I2C
 #include <math.h>              //Mathematics library for pow function (CO2 computation)
+#include "TrafficLevelManager.h"
 
 // -----------------------------------------------------------------------------------------------------------------
 
@@ -101,12 +102,6 @@ float co2 = 0;   // Variable to store CO2 value
 bool vP1       = false;
 bool vP1Previo = false;
 bool vP2       = false;
-bool vS1V3     = false;
-bool vS1V2     = false;
-bool vS1V1     = false;
-bool vS2V3     = false;
-bool vS2V2     = false;
-bool vS2V1     = false;
 int vNIVEL_LUZ_AMBIENTE = 0;
 int vLDR2 = 0;
 int vCO2 = 0;
@@ -162,13 +157,6 @@ void readAllData()
 
     vP1 = digitalRead(P1); // Toggle Modo Madrugada
     vP2 = digitalRead(P2); // Solicitud de peatón
-    vS1V3 = digitalRead(S1V3);
-    vS1V2 = digitalRead(S1V2);
-    vS1V1 = digitalRead(S1V1);
-
-    vS2V3 = digitalRead(S2V3);
-    vS2V2 = digitalRead(S2V2);
-    vS2V1 = digitalRead(S2V1);
 
     if (vP1 && !vP1Previo) {
         estaEnModalidadMadrugada = !estaEnModalidadMadrugada;
@@ -216,49 +204,6 @@ void mostrarNumeroContador(int numero) {
 }
 
 
-
-
-class TrafficLevelManager {
-    private:
-        int additionalTime = 0;
-        bool* trafficLevels[2][3] = {
-            {&vS1V1, &vS1V2, &vS1V3},
-            {&vS2V1, &vS2V2, &vS2V3}
-        };
-
-    public:
-        void calculateAdditionalTime(int activeSemaphore) {
-            for (int i = 2; i >= 0; i--) {
-                if (*this->trafficLevels[activeSemaphore][i] == 1) {
-                    this->additionalTime = this->calculateAlgorithmicAproximation(i+1) * 1000;
-                }
-            }
-        }
-
-        void reset() {
-            this->additionalTime = 0;
-        }
-
-        int getAdditionalTime() {
-            return this->additionalTime;
-        }
-
-        int calculateAlgorithmicAproximation(int n) {
-            int log2_array[2*n + 1];  // Array to hold log2 values from 1 to n
-
-            // Base case
-            log2_array[1] = 0;  // log2(1) = 0
-
-            // Fill the DP table iteratively
-            for (int i = 2; i <= 2*n; i++) {
-              log2_array[i] = log2_array[i / 2] + 1;  // log2(i) = log2(i//2) + 1
-            }
-
-            return log2_array[2*n];  // Return the log2 of n
-        }
-};
-
-
 TrafficLevelManager *trafficLevelManager1;
 TrafficLevelManager *trafficLevelManager2;
 
@@ -267,12 +212,6 @@ void setup()
 {
     pinMode(P1, INPUT);
     pinMode(P2, INPUT);
-    pinMode(S1V3, INPUT);
-    pinMode(S1V2, INPUT);
-    pinMode(S1V1, INPUT);
-    pinMode(S2V3, INPUT);
-    pinMode(S2V2, INPUT);
-    pinMode(S2V1, INPUT);
 
     pinMode(S1LR, OUTPUT);
     pinMode(S1LA, OUTPUT);
@@ -319,8 +258,10 @@ void setup()
     digitalWrite(S2CSF, HIGH);
     digitalWrite(S2CSG, HIGH);
 
-    trafficLevelManager1 = new TrafficLevelManager();
-    trafficLevelManager2 = new TrafficLevelManager();
+    const int trafficPins1[3] =  {S1V1, S1V2, S1V3};
+    trafficLevelManager1 = new TrafficLevelManager(trafficPins1);
+    const int trafficPins2[3] =  {S2V1, S2V2, S2V3};
+    trafficLevelManager2 = new TrafficLevelManager(trafficPins2);
 
     // * Communications
     Serial.begin(9600); // Start Serial communications with computer via Serial0 (TX0 RX0) at 9600 bauds
@@ -333,6 +274,8 @@ void setup()
 
 void loop() {
     readAllData();
+    trafficLevelManager1->updateTrafficLevels();
+    trafficLevelManager2->updateTrafficLevels();
 
     unsigned long currentMillis = millis();
 
@@ -347,8 +290,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = !estaEnModalidadMadrugada ? NARANJA_ROJO : AMARILLO_T_ROJO_T;
             }
-            trafficLevelManager1->calculateAdditionalTime(0);
-            trafficLevelManager2->calculateAdditionalTime(0);
+            trafficLevelManager1->calculateAdditionalTime();
+            trafficLevelManager2->calculateAdditionalTime();
             break;
 
         case NARANJA_ROJO:
@@ -360,8 +303,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = VERDE_ROJO;
             }
-            trafficLevelManager1->calculateAdditionalTime(0);
-            trafficLevelManager2->calculateAdditionalTime(0);
+            trafficLevelManager1->calculateAdditionalTime();
+            trafficLevelManager2->calculateAdditionalTime();
             break;
 
         case VERDE_ROJO:
@@ -374,7 +317,7 @@ void loop() {
                 state = VERDE_T_ROJO;
                 trafficLevelManager1->reset();
             }
-            trafficLevelManager2->calculateAdditionalTime(0);
+            trafficLevelManager2->calculateAdditionalTime();
             break;
 
         case VERDE_T_ROJO:
@@ -386,7 +329,7 @@ void loop() {
                 previousMillis = currentMillis;
                 state = AMARILLO_ROJO;
             }
-            trafficLevelManager2->calculateAdditionalTime(0);
+            trafficLevelManager2->calculateAdditionalTime();
             break;
 
         case AMARILLO_ROJO:
@@ -399,8 +342,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_ROJO_V2;
             }
-            trafficLevelManager1->calculateAdditionalTime(0);
-            trafficLevelManager2->calculateAdditionalTime(0);
+            trafficLevelManager1->calculateAdditionalTime();
+            trafficLevelManager2->calculateAdditionalTime();
             break;
 
         case ROJO_ROJO_V2:
@@ -412,8 +355,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = !estaEnModalidadMadrugada ? ROJO_NARANJA : AMARILLO_T_ROJO_T;
             }
-            trafficLevelManager1->calculateAdditionalTime(0);
-            trafficLevelManager2->calculateAdditionalTime(0);
+            trafficLevelManager1->calculateAdditionalTime();
+            trafficLevelManager2->calculateAdditionalTime();
             break;
 
         case ROJO_NARANJA:
@@ -425,8 +368,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_VERDE;
             }
-            trafficLevelManager1->calculateAdditionalTime(0);
-            trafficLevelManager2->calculateAdditionalTime(0);
+            trafficLevelManager1->calculateAdditionalTime();
+            trafficLevelManager2->calculateAdditionalTime();
             break;
 
         case ROJO_VERDE:
@@ -439,7 +382,7 @@ void loop() {
                 state = ROJO_VERDE_T;
                 trafficLevelManager2->reset();
             }
-            trafficLevelManager1->calculateAdditionalTime(0);
+            trafficLevelManager1->calculateAdditionalTime();
             break;
 
         case ROJO_VERDE_T:
@@ -453,7 +396,7 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_AMARILLO;
             }
-            trafficLevelManager1->calculateAdditionalTime(0);
+            trafficLevelManager1->calculateAdditionalTime();
             break;
 
         case ROJO_AMARILLO:
@@ -465,8 +408,8 @@ void loop() {
                 previousMillis = currentMillis;
                 state = ROJO_ROJO;
             }
-            trafficLevelManager1->calculateAdditionalTime(0);
-            trafficLevelManager2->calculateAdditionalTime(0);
+            trafficLevelManager1->calculateAdditionalTime();
+            trafficLevelManager2->calculateAdditionalTime();
             break;
 
         case AMARILLO_T_ROJO_T:
