@@ -2,6 +2,7 @@
 #include <Wire.h>              //Library required for I2C comms (LCD)
 #include <LiquidCrystal_I2C.h> //Library for LCD display via I2C
 #include <math.h>              //Mathematics library for pow function (CO2 computation)
+#include "SevenSegmentManager.h"
 
 // -----------------------------------------------------------------------------------------------------------------
 
@@ -75,6 +76,8 @@
 
 // Library definitions
 LiquidCrystal_I2C lcd(0x27, 20, 4);
+// SevenSegmentManager sevenSegmentManager1({S1CSA, S1CSB, S1CSC, S1CSD, S1CSE, S1CSF, S1CSG});
+SevenSegmentManager sevenSegmentManager2({S2CSA, S2CSB, S2CSC, S2CSD, S2CSE, S2CSF, S2CSG});
 
 // Definiciones de constantes para el sensor de CO2
 
@@ -177,47 +180,6 @@ void readAllData()
 
 }
 
-void mostrarNumeroContador(int numero) {
-
-    // Matriz para los estados de los segmentos (HIGH = encendido, LOW = apagado)
-    const int segmentos[10][7] = {
-        {LOW, LOW, LOW, LOW, LOW, LOW, HIGH},  // 0
-        {HIGH, LOW, LOW, HIGH, HIGH, HIGH, HIGH},     // 1
-        {LOW, LOW, HIGH, LOW, LOW, HIGH, LOW},  // 2
-        {LOW, LOW, LOW, LOW, HIGH, HIGH, LOW},  // 3
-        {HIGH, LOW, LOW, HIGH, HIGH, LOW, LOW},   // 4
-        {LOW, HIGH, LOW, LOW, HIGH, LOW, LOW},  // 5
-        {LOW, HIGH, LOW, LOW, LOW, LOW, LOW}, // 6
-        {LOW, LOW, LOW, HIGH, HIGH, HIGH, HIGH},    // 7
-        {LOW, LOW, LOW, LOW, LOW, LOW, LOW},// 8
-        {LOW, LOW, LOW, LOW, HIGH, LOW, LOW}  // 9
-    };
-
-    if (numero >= 0 && numero <= 9) {
-        Serial.println(numero);
-        // Activa los segmentos para el número correspondiente
-        digitalWrite(S2CSA, segmentos[numero][0]);
-        digitalWrite(S2CSB, segmentos[numero][1]);
-        digitalWrite(S2CSC, segmentos[numero][2]);
-        digitalWrite(S2CSD, segmentos[numero][3]);
-        digitalWrite(S2CSE, segmentos[numero][4]);
-        digitalWrite(S2CSF, segmentos[numero][5]);
-        digitalWrite(S2CSG, segmentos[numero][6]);
-    } else {
-        Serial.println(numero);
-        digitalWrite(S2CSA, HIGH);
-        digitalWrite(S2CSB, HIGH);
-        digitalWrite(S2CSC, HIGH);
-        digitalWrite(S2CSD, HIGH);
-        digitalWrite(S2CSE, HIGH);
-        digitalWrite(S2CSF, HIGH);
-        digitalWrite(S2CSG, LOW);
-    }
-}
-
-
-
-
 class TrafficLevelManager {
     private:
         int additionalTime = 0;
@@ -277,50 +239,23 @@ void setup()
     pinMode(S1LR, OUTPUT);
     pinMode(S1LA, OUTPUT);
     pinMode(S1LV, OUTPUT);
-    pinMode(S2CSA, OUTPUT);
-    pinMode(S2CSB, OUTPUT);
-    pinMode(S2CSC, OUTPUT);
-    pinMode(S2CSD, OUTPUT);
-    pinMode(S2CSE, OUTPUT);
-    pinMode(S2CSF, OUTPUT);
-    pinMode(S2CSG, OUTPUT);
 
     pinMode(S2LR, OUTPUT);
     pinMode(S2LA, OUTPUT);
     pinMode(S2LV, OUTPUT);
-    pinMode(S2CSA, OUTPUT);
-    pinMode(S2CSB, OUTPUT);
-    pinMode(S2CSC, OUTPUT);
-    pinMode(S2CSD, OUTPUT);
-    pinMode(S2CSE, OUTPUT);
-    pinMode(S2CSF, OUTPUT);
-    pinMode(S2CSG, OUTPUT);
 
     // Output cleaning
     digitalWrite(S1LR, LOW);
     digitalWrite(S1LA, LOW);
     digitalWrite(S1LV, LOW);
-    digitalWrite(S2CSA, HIGH);
-    digitalWrite(S2CSB, HIGH);
-    digitalWrite(S2CSC, HIGH);
-    digitalWrite(S2CSD, HIGH);
-    digitalWrite(S2CSE, HIGH);
-    digitalWrite(S2CSF, HIGH);
-    digitalWrite(S2CSG, HIGH);
 
     digitalWrite(S2LR, LOW);
     digitalWrite(S2LA, LOW);
     digitalWrite(S2LV, LOW);
-    digitalWrite(S2CSA, HIGH);
-    digitalWrite(S2CSB, HIGH);
-    digitalWrite(S2CSC, HIGH);
-    digitalWrite(S2CSD, HIGH);
-    digitalWrite(S2CSE, HIGH);
-    digitalWrite(S2CSF, HIGH);
-    digitalWrite(S2CSG, HIGH);
-
-    trafficLevelManager1 = new TrafficLevelManager();
     trafficLevelManager2 = new TrafficLevelManager();
+    // SevenSegments
+    // sevenSegmentManager1.init();
+    sevenSegmentManager2.init();
 
     // * Communications
     Serial.begin(9600); // Start Serial communications with computer via Serial0 (TX0 RX0) at 9600 bauds
@@ -341,7 +276,8 @@ void loop() {
         case ROJO_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
-            mostrarNumeroContador(-1);
+
+            sevenSegmentManager2.print(-1);
 
             if (currentMillis - previousMillis >= DURACION_ROJO) {
                 previousMillis = currentMillis;
@@ -354,7 +290,7 @@ void loop() {
         case NARANJA_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, true, false); // Luz roja y amarilla
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
-            mostrarNumeroContador(-1);
+            sevenSegmentManager2.print(-1);
 
             if (currentMillis - previousMillis >= DURACION_NARANJA) {
                 previousMillis = currentMillis;
@@ -367,7 +303,7 @@ void loop() {
         case VERDE_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, false, false, true); // Luz verde
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
-            mostrarNumeroContador(((trafficLevelManager2->getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            sevenSegmentManager2.print(((trafficLevelManager2->getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
 
             if (currentMillis - previousMillis >= trafficLevelManager1->getAdditionalTime() + DURACION_VERDE) {
                 previousMillis = currentMillis;
@@ -380,7 +316,7 @@ void loop() {
         case VERDE_T_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, false, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2);
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false);
-            mostrarNumeroContador(((DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            sevenSegmentManager2.print(((DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
 
             if (currentMillis - previousMillis >= DURACION_VERDE_T) {
                 previousMillis = currentMillis;
@@ -392,10 +328,10 @@ void loop() {
         case AMARILLO_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, false, true, false); // Luz amarilla
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
-            mostrarNumeroContador((DURACION_AMARILLO + 1000 - (currentMillis - previousMillis)) / 1000);
+            sevenSegmentManager2.print((DURACION_AMARILLO + 1000 - (currentMillis - previousMillis)) / 1000);
 
             if (currentMillis - previousMillis >= DURACION_AMARILLO) {
-                mostrarNumeroContador(-1);
+                sevenSegmentManager2.print(-1);
                 previousMillis = currentMillis;
                 state = ROJO_ROJO_V2;
             }
@@ -406,7 +342,7 @@ void loop() {
         case ROJO_ROJO_V2:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
-            mostrarNumeroContador(-1);
+            sevenSegmentManager2.print(-1);
 
             if (currentMillis - previousMillis >= DURACION_ROJO) {
                 previousMillis = currentMillis;
@@ -419,7 +355,7 @@ void loop() {
         case ROJO_NARANJA:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, true, true, false); // Luz roja y amarilla
-            mostrarNumeroContador(-1);
+            sevenSegmentManager2.print(-1);
 
             if (currentMillis - previousMillis >= DURACION_NARANJA) {
                 previousMillis = currentMillis;
@@ -432,7 +368,7 @@ void loop() {
         case ROJO_VERDE:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, false, false, true); // Luz verde
-            mostrarNumeroContador(-1);
+            sevenSegmentManager2.print(-1);
 
             if (currentMillis - previousMillis >= trafficLevelManager2->getAdditionalTime() + DURACION_VERDE) {
                 previousMillis = currentMillis;
@@ -447,7 +383,7 @@ void loop() {
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, false, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2); // Luz verde y amarilla (por ahora)
 
-            mostrarNumeroContador(-1);
+            sevenSegmentManager2.print(-1);
 
             if (currentMillis - previousMillis >= DURACION_VERDE_T) {
                 previousMillis = currentMillis;
@@ -459,7 +395,7 @@ void loop() {
         case ROJO_AMARILLO:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, false, true, false); // Luz verde y amarilla (por ahora)
-            mostrarNumeroContador(-1);
+            sevenSegmentManager2.print(-1);
 
             if (currentMillis - previousMillis >= DURACION_AMARILLO) {
                 previousMillis = currentMillis;
