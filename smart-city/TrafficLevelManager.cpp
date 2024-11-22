@@ -6,7 +6,10 @@ TrafficLevelManager::TrafficLevelManager(const int (&pinNumbers)[3]) {
   for (int i = 0; i < 3; i++) {
     this->pins[i] = pinNumbers[i];  // Copy pin numbers to member array
     this->trafficLevels[i] = false; // Initialize traffic levels to false
-    pinMode(this->pins[i], INPUT);
+  }
+
+  for (int i = 0; i < 7; i++) {
+    this->additionalTimes[i] = 0; // Initialize traffic levels to false
   }
   this->additionalTime = 0;                  // Initialize additionalTime
   this->calculateAlgorithmicAproximation(3); // Precompute additional times
