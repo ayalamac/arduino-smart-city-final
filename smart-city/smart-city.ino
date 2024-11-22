@@ -97,6 +97,9 @@ int state, previous_state;
 float volts = 0; // Variable to store current voltage from CO2 sensor
 float co2 = 0;   // Variable to store CO2 value
 
+TrafficLevelManager *trafficLevelManager1;
+TrafficLevelManager *trafficLevelManager2;
+
 bool vP1       = false;
 bool vP1Previo = false;
 bool vP2       = false;
