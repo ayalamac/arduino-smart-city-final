@@ -204,8 +204,8 @@ void mostrarNumeroContador(int numero) {
 }
 
 
-TrafficLevelManager *trafficLevelManager1;
-TrafficLevelManager *trafficLevelManager2;
+TrafficLevelManager trafficLevelManager1({S1V1, S1V2, S1V3});
+TrafficLevelManager trafficLevelManager2({S2V1, S2V2, S2V3});
 
 
 void setup()
@@ -258,10 +258,8 @@ void setup()
     digitalWrite(S2CSF, HIGH);
     digitalWrite(S2CSG, HIGH);
 
-    const int trafficPins1[3] =  {S1V1, S1V2, S1V3};
-    trafficLevelManager1 = new TrafficLevelManager(trafficPins1);
-    const int trafficPins2[3] =  {S2V1, S2V2, S2V3};
-    trafficLevelManager2 = new TrafficLevelManager(trafficPins2);
+    trafficLevelManager1.init();
+    trafficLevelManager2.init();
 
     // * Communications
     Serial.begin(9600); // Start Serial communications with computer via Serial0 (TX0 RX0) at 9600 bauds

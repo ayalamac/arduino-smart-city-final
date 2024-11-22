@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 // Constructor
-TrafficLevelManager::TrafficLevelManager(const int pinNumbers[3]) {
+TrafficLevelManager::TrafficLevelManager(const int (&pinNumbers)[3]) {
   for (int i = 0; i < 3; i++) {
     this->pins[i] = pinNumbers[i];  // Copy pin numbers to member array
     this->trafficLevels[i] = false; // Initialize traffic levels to false
@@ -20,6 +20,13 @@ void TrafficLevelManager::calculateAdditionalTime() {
           this->additionalTimes[i] * 1000; // Set additionalTime based on levels
       break; // Exit loop after finding the first active level
     }
+  }
+}
+
+// Reset method
+void TrafficLevelManager::init() {
+  for (int i = 0; i < 3; i++) {
+    pinMode(this->pins[i], INPUT);
   }
 }
 

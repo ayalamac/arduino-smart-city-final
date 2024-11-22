@@ -10,11 +10,12 @@ private:
   int additionalTime;     // Additional time in milliseconds
 
 public:
-  TrafficLevelManager(const int pinNumbers[3]);
+  TrafficLevelManager(const int (&pinNumbers)[3]);
 
   void updateTrafficLevels();
   void calculateAdditionalTime();
   void reset();
+  void init();
   int getAdditionalTime();
 
 private:
