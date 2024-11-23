@@ -83,8 +83,9 @@
     {
       "type": "wokwi-pushbutton-6mm",
       "id": "P2",
-      "top": 30,
-      "left": 556,
+      "top": 132.2,
+      "left": 556.8,
+      "rotate": 270,
       "attrs": { "color": "grey", "bounce": "0" }
     },
     {
