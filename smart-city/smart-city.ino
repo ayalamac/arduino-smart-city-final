@@ -2,6 +2,7 @@
 #include <Wire.h>              //Library required for I2C comms (LCD)
 #include <LiquidCrystal_I2C.h> //Library for LCD display via I2C
 #include <math.h>              //Mathematics library for pow function (CO2 computation)
+#include <Stepper.h>            // Stepper motor
 #include "TrafficLevelManager.h"
 
 // -----------------------------------------------------------------------------------------------------------------
@@ -92,6 +93,9 @@ const unsigned long DURACION_VERDE      = 2000;
 const unsigned long DURACION_VERDE_T    = 2000;
 const unsigned long DURACION_AMARILLO   = 1000;
 const unsigned long DURACION_TITILACION = 250;
+
+// Pasos por revolución de ventilador
+const int STEPS_PER_REVOLUTION = 360;
 
 // Variable definitions
 int state, previous_state;
@@ -207,6 +211,15 @@ void mostrarNumeroContador(int numero) {
 TrafficLevelManager trafficLevelManager1({S1V1, S1V2, S1V3});
 TrafficLevelManager trafficLevelManager2({S2V1, S2V2, S2V3});
 
+Stepper myStepper(STEPS_PER_REVOLUTION, 8, 9, 10, 11);
+
+void ventilacion() {
+    // vCO2 0 -1023
+    if(vCO2 > 0) {
+        myStepper.setSpeed(vCO2 / 2);
+    }
+    myStepper.step(STEPS_PER_REVOLUTION);
+}
 
 void setup()
 {
@@ -261,6 +274,9 @@ void setup()
     trafficLevelManager1.init();
     trafficLevelManager2.init();
 
+    // set the stepper motor speed at 60 rpm:
+    myStepper.setSpeed(60);
+
     // * Communications
     Serial.begin(9600); // Start Serial communications with computer via Serial0 (TX0 RX0) at 9600 bauds
     lcd.init();
@@ -274,6 +290,7 @@ void loop() {
     readAllData();
     trafficLevelManager1.updateTrafficLevels();
     trafficLevelManager2.updateTrafficLevels();
+    ventilacion();
 
     unsigned long currentMillis = millis();
 

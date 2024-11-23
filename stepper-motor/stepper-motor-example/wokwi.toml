@@ -1,0 +1,5 @@
+[wokwi]
+version = 1
+firmware = 'stepper-motor-example.ino.hex'
+elf = 'stepper-motor-example.ino.elf'
+rfc2217ServerPort = 4000
