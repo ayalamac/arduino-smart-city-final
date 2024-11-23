@@ -10,7 +10,7 @@
 
 // * I/O pin labeling
 
-#define NIVEL_LUZ_AMBIENTE A0 // Potenciómetro que simula la intensidad de la luz en el ambiente para regular la iluminación de los dos semáforos
+#define LIGHT_INTENSITY_SENSOR A0 // Potenciómetro que simula la intensidad de la luz en el ambiente para regular la iluminación de los dos semáforos
 #define LDR2 A1 // Pendiente cómo usarlo...
 #define CO2 A2  // Sensor de CO2
 
@@ -19,9 +19,9 @@
 // -----------------------------------------------------------------------------------------------------------------
 
 // Semáforo 1 - Principal
-#define S1LR 22  // Semáforo 1 - Luz Roja
-#define S1LA 23  // Semáforo 1 - Luz Amarilla
-#define S1LV 24  // Semáforo 1 - Luz Verde
+#define S1LR 2  // Semáforo 1 - Luz Roja
+#define S1LA 3  // Semáforo 1 - Luz Amarilla
+#define S1LV 4  // Semáforo 1 - Luz Verde
 
 #define S1V1 33 // Semáforo 1 - Sensor IR para medir volumen de tráfico menor
 #define S1V2 34 // Semáforo 1 - Sensor IR para medir volumen de tráfico medio
@@ -38,9 +38,9 @@
 // -----------------------------------------------------------------------------------------------------------------
 
 // Semáforo 2 - Secundario
-#define S2LR 25  // Semáforo 2 - Luz Roja
-#define S2LA 26  // Semáforo 2 - Luz Amarilla
-#define S2LV 27  // Semáforo 2 - Luz Verde
+#define S2LR 5  // Semáforo 2 - Luz Roja
+#define S2LA 6  // Semáforo 2 - Luz Amarilla
+#define S2LV 7  // Semáforo 2 - Luz Verde
 
 #define S2V1 30 // Semáforo 2 - Sensor IR para medir volumen de tráfico menor
 #define S2V2 31 // Semáforo 2 - Sensor IR para medir volumen de tráfico medio
@@ -105,17 +105,20 @@ float co2 = 0;   // Variable to store CO2 value
 bool vP1       = false;
 bool vP1Previo = false;
 bool vP2       = false;
-int vNIVEL_LUZ_AMBIENTE = 0;
+
+int ambientLightLevel = 255;
+int currentBrightness = 1;
 int vLDR2 = 0;
 int vCO2 = 0;
 float dCO2 = 0;
 
 unsigned long previousMillis = 0;
 
-void actualizarSemaforo(int pinRed, int pinYellow, int pinGreen, bool red, bool yellow, bool green) {
-    digitalWrite(pinRed, red);
-    digitalWrite(pinYellow, yellow);
-    digitalWrite(pinGreen, green);
+void actualizarSemaforo(int pinRed, int pinYellow, int pinGreen, int redLevel, int yellowlevel, int greenLevel) {
+
+    analogWrite(pinRed, redLevel * currentBrightness);
+    analogWrite(pinYellow, yellowlevel * currentBrightness);
+    analogWrite(pinGreen, greenLevel * currentBrightness);
 }
 
 void mostrarEstadoLCD() {
@@ -143,7 +146,12 @@ bool estaEnModalidadMadrugada = false;
 
 void readAllData()
 {
-    vNIVEL_LUZ_AMBIENTE = analogRead(NIVEL_LUZ_AMBIENTE);
+    ambientLightLevel = analogRead(LIGHT_INTENSITY_SENSOR);
+
+    currentBrightness = map(ambientLightLevel, 0, 1023, 32, 255);
+    currentBrightness = ((currentBrightness - 32) / 32) * 32 + 32;
+    currentBrightness = constrain(currentBrightness, 32, 255);
+
     vLDR2 = analogRead(LDR2);
     vCO2 = analogRead(CO2);
 
@@ -216,8 +224,8 @@ void loop() {
     // Verificar el estado del semáforo y realizar acciones
     switch (state) {
         case ROJO_ROJO:
-            actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
-            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)true, (int)false, (int)false); // Luz roja
+            actualizarSemaforo(S2LR, S2LA, S2LV, (int)true, (int)false, (int)false); // Luz roja
 
             sevenSegmentManager1.print(-1);
             sevenSegmentManager2.print(-1);
@@ -231,8 +239,8 @@ void loop() {
             break;
 
         case NARANJA_ROJO:
-            actualizarSemaforo(S1LR, S1LA, S1LV, true, true, false); // Luz roja y amarilla
-            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)true, (int)true, (int)false); // Luz roja y amarilla
+            actualizarSemaforo(S2LR, S2LA, S2LV, (int)true, (int)false, (int)false); // Luz roja
             sevenSegmentManager1.print(-1);
             sevenSegmentManager2.print(-1);
 
@@ -245,8 +253,8 @@ void loop() {
             break;
 
         case VERDE_ROJO:
-            actualizarSemaforo(S1LR, S1LA, S1LV, false, false, true);
-            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false);
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)false, (int)false, (int)true);
+            actualizarSemaforo(S2LR, S2LA, S2LV, (int)true, (int)false, (int)false);
 
             sevenSegmentManager1.print(((trafficLevelManager1.getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
             sevenSegmentManager2.print(-1);
@@ -260,8 +268,8 @@ void loop() {
             break;
 
         case VERDE_T_ROJO:
-            actualizarSemaforo(S1LR, S1LA, S1LV, false, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2);
-            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false);
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)false, (int)false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2);
+            actualizarSemaforo(S2LR, S2LA, S2LV, (int)true, (int)false, (int)false);
             sevenSegmentManager1.print(((DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
             sevenSegmentManager2.print(-1);
 
@@ -273,8 +281,8 @@ void loop() {
             break;
 
         case AMARILLO_ROJO:
-            actualizarSemaforo(S1LR, S1LA, S1LV, false, true, false);
-            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false);
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)false, (int)true, (int)false);
+            actualizarSemaforo(S2LR, S2LA, S2LV, (int)true, (int)false, (int)false);
             sevenSegmentManager1.print(((DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
             sevenSegmentManager2.print(-1);
 
@@ -288,8 +296,8 @@ void loop() {
             break;
 
         case ROJO_ROJO_V2:
-            actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
-            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)true, (int)false, (int)false); // Luz roja
+            actualizarSemaforo(S2LR, S2LA, S2LV, (int)true, (int)false, (int)false); // Luz roja
             sevenSegmentManager1.print(-1);
             sevenSegmentManager2.print(-1);
 
@@ -302,8 +310,8 @@ void loop() {
             break;
 
         case ROJO_NARANJA:
-            actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
-            actualizarSemaforo(S2LR, S2LA, S2LV, true, true, false); // Luz roja y amarilla
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)true, (int)false, (int)false); // Luz roja
+            actualizarSemaforo(S2LR, S2LA, S2LV, (int)true, (int)true, (int)false); // Luz roja y amarilla
             sevenSegmentManager1.print(-1);
             sevenSegmentManager2.print(-1);
 
@@ -316,8 +324,8 @@ void loop() {
             break;
 
         case ROJO_VERDE:
-            actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
-            actualizarSemaforo(S2LR, S2LA, S2LV, false, false, true); // Luz verde
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)true, (int)false, (int)false); // Luz roja
+            actualizarSemaforo(S2LR, S2LA, S2LV, (int)false, (int)false, (int)true); // Luz verde
             
             sevenSegmentManager1.print(-1);
             sevenSegmentManager2.print(((trafficLevelManager2.getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
@@ -332,8 +340,8 @@ void loop() {
 
         case ROJO_VERDE_T:
 
-            actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false);
-            actualizarSemaforo(S2LR, S2LA, S2LV, false, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2); // Luz verde y amarilla (por ahora)
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)true, (int)false, (int)false);
+            actualizarSemaforo(S2LR, S2LA, S2LV, (int)false, (int)false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2); // Luz verde y amarilla (por ahora)
 
             sevenSegmentManager1.print(-1);
             sevenSegmentManager2.print(((DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
@@ -346,8 +354,8 @@ void loop() {
             break;
 
         case ROJO_AMARILLO:
-            actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false);
-            actualizarSemaforo(S2LR, S2LA, S2LV, false, true, false);
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)true, (int)false, (int)false);
+            actualizarSemaforo(S2LR, S2LA, S2LV, (int)false, (int)true, (int)false);
             sevenSegmentManager1.print(-1);
             sevenSegmentManager2.print(((DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
 
@@ -360,8 +368,9 @@ void loop() {
             break;
 
         case AMARILLO_T_ROJO_T:
-            actualizarSemaforo(S1LR, S1LA, S1LV, false, ((currentMillis - previousMillis) / (2 * DURACION_TITILACION)) % 2, false); // Luz amarilla titilando
-            actualizarSemaforo(S2LR, S2LA, S2LV, ((currentMillis - previousMillis) / (2 * DURACION_TITILACION)) % 2, false, false); // Luz roja titilando
+            currentBrightness = 255;
+            actualizarSemaforo(S1LR, S1LA, S1LV, (int)false, ((currentMillis - previousMillis) / (2 * DURACION_TITILACION)) % 2, (int)false); // Luz amarilla titilando
+            actualizarSemaforo(S2LR, S2LA, S2LV, ((currentMillis -(int) previousMillis) / (2 * DURACION_TITILACION)) % 2, (int)false, (int)false); // Luz roja titilando
             state = estaEnModalidadMadrugada ? AMARILLO_T_ROJO_T : ROJO_ROJO;
             break;
     }
