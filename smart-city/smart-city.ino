@@ -183,6 +183,7 @@ void ventilacion() {
         myStepper.setSpeed(vCO2 / 2);
     }
     myStepper.step(STEPS_PER_REVOLUTION);
+    Serial.println(vCO2);
 }
 
 void setup()
