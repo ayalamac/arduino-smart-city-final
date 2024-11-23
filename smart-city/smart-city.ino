@@ -23,17 +23,17 @@
 #define S1LA 23  // Semáforo 1 - Luz Amarilla
 #define S1LV 24  // Semáforo 1 - Luz Verde
 
-#define S1V1 30 // Semáforo 1 - Sensor IR para medir volumen de tráfico menor
-#define S1V2 31 // Semáforo 1 - Sensor IR para medir volumen de tráfico medio
-#define S1V3 32 // Semáforo 1 - Sensor IR para medir volumen de tráfico alto
+#define S1V1 33 // Semáforo 1 - Sensor IR para medir volumen de tráfico menor
+#define S1V2 34 // Semáforo 1 - Sensor IR para medir volumen de tráfico medio
+#define S1V3 35 // Semáforo 1 - Sensor IR para medir volumen de tráfico alto
 
-#define S1CSA 53
-#define S1CSB 52
-#define S1CSC 51
-#define S1CSD 50
-#define S1CSE 49
-#define S1CSF 47
-#define S1CSG 48
+#define S1CSA 45
+#define S1CSB 44
+#define S1CSC 43
+#define S1CSD 42
+#define S1CSE 41
+#define S1CSF 40
+#define S1CSG 39
 
 // -----------------------------------------------------------------------------------------------------------------
 
@@ -42,19 +42,19 @@
 #define S2LA 26  // Semáforo 2 - Luz Amarilla
 #define S2LV 27  // Semáforo 2 - Luz Verde
 
-#define S2V1 33 // Semáforo 2 - Sensor IR para medir volumen de tráfico menor
-#define S2V2 34 // Semáforo 2 - Sensor IR para medir volumen de tráfico medio
-#define S2V3 35 // Semáforo 2 - Sensor IR para medir volumen de tráfico alto
+#define S2V1 30 // Semáforo 2 - Sensor IR para medir volumen de tráfico menor
+#define S2V2 31 // Semáforo 2 - Sensor IR para medir volumen de tráfico medio
+#define S2V3 32 // Semáforo 2 - Sensor IR para medir volumen de tráfico alto
 
 #define P2 36   // Botón para solicitar reducción de tiempo en verde, en el semáforo 2 para agilizar el paso peatonal
 
-#define S2CSA 45
-#define S2CSB 44
-#define S2CSC 43
-#define S2CSD 42
-#define S2CSE 41
-#define S2CSF 40
-#define S2CSG 39
+#define S2CSA 53
+#define S2CSB 52
+#define S2CSC 51
+#define S2CSD 50
+#define S2CSE 49
+#define S2CSF 47
+#define S2CSG 48
 
 // -----------------------------------------------------------------------------------------------------------------
 
@@ -224,7 +224,7 @@ void loop() {
 
             if (currentMillis - previousMillis >= DURACION_ROJO) {
                 previousMillis = currentMillis;
-                state = !estaEnModalidadMadrugada ? NARANJA_ROJO : AMARILLO_T_ROJO_T;
+                state = estaEnModalidadMadrugada ? AMARILLO_T_ROJO_T : NARANJA_ROJO;
             }
             trafficLevelManager1.calculateAdditionalTime();
             trafficLevelManager2.calculateAdditionalTime();
@@ -245,10 +245,11 @@ void loop() {
             break;
 
         case VERDE_ROJO:
-            actualizarSemaforo(S1LR, S1LA, S1LV, false, false, true); // Luz verde
-            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
-            sevenSegmentManager1.print(-1);
-            sevenSegmentManager2.print(((trafficLevelManager2.getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            actualizarSemaforo(S1LR, S1LA, S1LV, false, false, true);
+            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false);
+
+            sevenSegmentManager1.print(((trafficLevelManager1.getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            sevenSegmentManager2.print(-1);
 
             if (currentMillis - previousMillis >= trafficLevelManager1.getAdditionalTime() + DURACION_VERDE) {
                 previousMillis = currentMillis;
@@ -261,9 +262,8 @@ void loop() {
         case VERDE_T_ROJO:
             actualizarSemaforo(S1LR, S1LA, S1LV, false, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2);
             actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false);
-            // sevenSegmentManager2.print(((DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
-            sevenSegmentManager1.print(-1);
-            sevenSegmentManager2.print(((trafficLevelManager2.getAdditionalTime() + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            sevenSegmentManager1.print(((DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            sevenSegmentManager2.print(-1);
 
             if (currentMillis - previousMillis >= DURACION_VERDE_T) {
                 previousMillis = currentMillis;
@@ -273,14 +273,13 @@ void loop() {
             break;
 
         case AMARILLO_ROJO:
-            actualizarSemaforo(S1LR, S1LA, S1LV, false, true, false); // Luz amarilla
-            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false); // Luz roja
-            // sevenSegmentManager2.print((DURACION_AMARILLO + 1000 - (currentMillis - previousMillis)) / 1000);
-            sevenSegmentManager1.print(-1);
-            sevenSegmentManager2.print(((trafficLevelManager2.getAdditionalTime() + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            actualizarSemaforo(S1LR, S1LA, S1LV, false, true, false);
+            actualizarSemaforo(S2LR, S2LA, S2LV, true, false, false);
+            sevenSegmentManager1.print(((DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
+            sevenSegmentManager2.print(-1);
 
             if (currentMillis - previousMillis >= DURACION_AMARILLO) {
-                sevenSegmentManager2.print(-1);
+                sevenSegmentManager1.print(-1);
                 previousMillis = currentMillis;
                 state = ROJO_ROJO_V2;
             }
@@ -296,7 +295,7 @@ void loop() {
 
             if (currentMillis - previousMillis >= DURACION_ROJO) {
                 previousMillis = currentMillis;
-                state = !estaEnModalidadMadrugada ? ROJO_NARANJA : AMARILLO_T_ROJO_T;
+                state = estaEnModalidadMadrugada ? AMARILLO_T_ROJO_T : ROJO_NARANJA;
             }
             trafficLevelManager1.calculateAdditionalTime();
             trafficLevelManager2.calculateAdditionalTime();
@@ -319,8 +318,9 @@ void loop() {
         case ROJO_VERDE:
             actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
             actualizarSemaforo(S2LR, S2LA, S2LV, false, false, true); // Luz verde
-            sevenSegmentManager1.print(((trafficLevelManager2.getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
-            sevenSegmentManager2.print(-1);
+            
+            sevenSegmentManager1.print(-1);
+            sevenSegmentManager2.print(((trafficLevelManager2.getAdditionalTime() + DURACION_VERDE + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
 
             if (currentMillis - previousMillis >= trafficLevelManager2.getAdditionalTime() + DURACION_VERDE) {
                 previousMillis = currentMillis;
@@ -332,11 +332,11 @@ void loop() {
 
         case ROJO_VERDE_T:
 
-            actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
+            actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false);
             actualizarSemaforo(S2LR, S2LA, S2LV, false, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2); // Luz verde y amarilla (por ahora)
 
-            sevenSegmentManager1.print(((trafficLevelManager2.getAdditionalTime() + DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
-            sevenSegmentManager2.print(-1);
+            sevenSegmentManager1.print(-1);
+            sevenSegmentManager2.print(((DURACION_VERDE_T + DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
 
             if (currentMillis - previousMillis >= DURACION_VERDE_T) {
                 previousMillis = currentMillis;
@@ -346,10 +346,10 @@ void loop() {
             break;
 
         case ROJO_AMARILLO:
-            actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false); // Luz roja
-            actualizarSemaforo(S2LR, S2LA, S2LV, false, true, false); // Luz verde y amarilla (por ahora)
-            sevenSegmentManager1.print(((trafficLevelManager2.getAdditionalTime() +  DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
-            sevenSegmentManager2.print(-1);
+            actualizarSemaforo(S1LR, S1LA, S1LV, true, false, false);
+            actualizarSemaforo(S2LR, S2LA, S2LV, false, true, false);
+            sevenSegmentManager1.print(-1);
+            sevenSegmentManager2.print(((DURACION_AMARILLO + 1000) - (currentMillis - previousMillis)) / 1000);
 
             if (currentMillis - previousMillis >= DURACION_AMARILLO) {
                 previousMillis = currentMillis;
@@ -360,8 +360,8 @@ void loop() {
             break;
 
         case AMARILLO_T_ROJO_T:
-            actualizarSemaforo(S1LR, S1LA, S1LV, false, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2, false); // Luz amarilla titilando
-            actualizarSemaforo(S2LR, S2LA, S2LV, ((currentMillis - previousMillis) / DURACION_TITILACION) % 2, false, false); // Luz roja titilando
+            actualizarSemaforo(S1LR, S1LA, S1LV, false, ((currentMillis - previousMillis) / (2 * DURACION_TITILACION)) % 2, false); // Luz amarilla titilando
+            actualizarSemaforo(S2LR, S2LA, S2LV, ((currentMillis - previousMillis) / (2 * DURACION_TITILACION)) % 2, false, false); // Luz roja titilando
             state = estaEnModalidadMadrugada ? AMARILLO_T_ROJO_T : ROJO_ROJO;
             break;
     }
